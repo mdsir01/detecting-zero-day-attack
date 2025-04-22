@@ -1,10 +1,9 @@
-# ------------------------
 # 🧼 PREPROCESSING
-# ------------------------
 import numpy as np
 import pandas as pd
 import random
 import matplotlib.pyplot as plt
+import streamlit as st
 from sklearn.preprocessing import LabelEncoder, MinMaxScaler
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score, confusion_matrix, classification_report
@@ -36,18 +35,14 @@ y = df['label']
 X_scaled = MinMaxScaler().fit_transform(X)
 X_train, X_test, y_train, y_test = train_test_split(X_scaled, y, test_size=0.2, random_state=42)
 
-# ------------------------
 # 🧮 DISCRETIZATION
-# ------------------------
 n_bins = 10
 bins = [np.linspace(np.min(X_train[:, i]), np.max(X_train[:, i]), n_bins + 1)[1:-1] for i in range(X_train.shape[1])]
 
 def discretize_state(state, bins):
     return tuple(np.digitize(state[i], bins[i]) for i in range(len(bins)))
 
-# ------------------------
 # 🧪 ENVIRONMENT
-# ------------------------
 class SimpleEnv:
     def __init__(self, X, y):
         self.X = X
@@ -69,9 +64,7 @@ class SimpleEnv:
         next_state = discretize_state(self.X[self.index], bins)
         return next_state, reward, False
 
-# ------------------------
 # 🤖 Q-LEARNING AGENT
-# ------------------------
 alpha = 0.1
 gamma = 0.99
 epsilon = 1.0
@@ -103,20 +96,17 @@ for episode in range(n_episodes):
 
     episode_rewards.append(total_reward)
 
-# ------------------------
 # 📈 TRAINING VISUALIZATION
-# ------------------------
+st.subheader("📈 Episode Rewards Over Time")
 plt.plot(episode_rewards)
 plt.title("Episode Rewards Over Time")
 plt.xlabel("Episode")
 plt.ylabel("Total Reward")
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+st.pyplot(plt)
 
-# ------------------------
 # 📊 EVALUATION
-# ------------------------
 def evaluate_agent(X_test, y_test, q_table, bins):
     predictions = []
     true_labels = y_test.to_numpy()
@@ -133,19 +123,24 @@ def evaluate_agent(X_test, y_test, q_table, bins):
 
 accuracy, conf_matrix, class_report = evaluate_agent(X_test, y_test, q_table, bins)
 
-print("🎯 Accuracy:", accuracy)
-print("📊 Confusion Matrix:\n", conf_matrix)
-print("📋 Classification Report:\n", class_report)
+# Display evaluation metrics
+st.subheader("🎯 Accuracy")
+st.write(accuracy)
 
-# ------------------------
+st.subheader("📊 Confusion Matrix")
+st.write(conf_matrix)
+
+st.subheader("📋 Classification Report")
+st.text(class_report)
+
 # 🧾 COMPARISON TABLE (for report)
-# ------------------------
-print("""
+st.subheader("📊 Comparison Table")
+st.markdown(f"""
 | Model               | Accuracy (%) | Pros                               | Cons                            |
 |--------------------|--------------|------------------------------------|---------------------------------|
-| Q-Learning Agent   | {:.2f}        | Learns from interaction, adaptive  | Needs discretization, slow     |
+| Q-Learning Agent   | **{accuracy * 100:.2f}**        | Learns from interaction, adaptive  | Needs discretization, slow     |
 | Decision Tree      | 75           | Easy to interpret                  | Can overfit                    |
 | Random Forest      | 85           | High accuracy, robust              | Slower to train                |
 | SVM                | 80           | Good for small datasets            | Struggles with high dimensions |
 | KNN                | 70           | Simple, no training needed         | Slow during prediction         |
-""".format(accuracy * 100))
+""")
